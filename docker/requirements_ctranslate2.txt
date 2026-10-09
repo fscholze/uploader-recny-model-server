@@ -1,4 +1,5 @@
-whisper-ctranslate2==0.4.5
-pyannote.audio==3.4.0
+whisper-ctranslate2==0.5.7
+pyannote.audio==4.0.7
 nvidia-cuda-runtime-cu12
 nvidia-cublas-cu12
+av==18.1.0

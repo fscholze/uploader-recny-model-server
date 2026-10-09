@@ -16,7 +16,7 @@ WORKDIR /opt/venv
 
 RUN apt update && apt install -y python3-venv ffmpeg sox git && rm -rf /var/lib/apt/lists/*
 
-RUN touch d
+RUN touch F
 
 RUN git clone https://github.com/ZalozbaDev/open-dubbing
 RUN cd open-dubbing && python3 -m venv .
@@ -36,20 +36,23 @@ WORKDIR /usr/app/src
 
 RUN apt update && apt install -y python3 libpython3.12 ffmpeg sox nodejs npm && rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p uploads && chown 1000:1000 uploads
+
+RUN mkdir -p src/scripts && chown -R 1000:1000 src/
+
 # venv übernehmen
-COPY --from=dubbingbuildpython /opt/venv /opt/venv
+COPY --chown=1000:1000 --from=dubbingbuildpython /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY package*.json ./
+COPY --chown=1000:1000 package*.json ./
 RUN npm ci --omit=dev
 
-COPY --from=dubbingbuildnode /app/dist ./dist
+COPY --chown=1000:1000 --from=dubbingbuildnode /app/dist ./dist
 
-RUN mkdir -p uploads
+COPY --chown=1000:1000 src/scripts/create_dubbing.sh src/scripts
+COPY --chown=1000:1000 src/scripts/dubbing.sh        src/scripts
 
-RUN mkdir -p src/scripts
-COPY src/scripts/create_dubbing.sh src/scripts
-COPY src/scripts/dubbing.sh        src/scripts
+USER 1000
 
 ENV NODE_ENV=production
 ENV SERVER_MODE=DUBBING

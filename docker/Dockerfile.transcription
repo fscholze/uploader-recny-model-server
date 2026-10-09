@@ -17,6 +17,8 @@ RUN cd /opt/venv/forcealign && /bin/bash -c 'source bin/activate && pip3 install
 
 COPY src/scripts/align_wav2vec2.py          /opt/venv/forcealign/
 COPY src/scripts/translate_srt_sotra_lsf.py /opt/venv/forcealign/
+COPY src/scripts/log2srt.py                 /opt/venv/forcealign/
+COPY src/scripts/log2txt.py                 /opt/venv/forcealign/
 
 ################ build container for node
 FROM node:24 AS node_builder
@@ -43,28 +45,30 @@ RUN apt update && apt install -y python3 ffmpeg sox nodejs npm libhunspell-1.7-0
 WORKDIR /usr/app/src
 
 # whisper.cpp / cmdline übernehmen
-COPY --from=ghcr.io/zalozbadev/docker_vosk-cmdline:unify_recognizers /opt/build/whisper.cpp                                 /opt/whisper.cpp
-COPY --from=ghcr.io/zalozbadev/docker_vosk-cmdline:unify_recognizers /opt/build/common/cmdline/whisper_out                  /opt/whisper_out
-COPY --from=ghcr.io/zalozbadev/docker_vosk-cmdline:unify_recognizers /opt/build/common/cmdline/recikts_out                  /opt/recikts_out
-COPY --from=ghcr.io/zalozbadev/docker_vosk-cmdline:unify_recognizers /opt/build/common/cmdline/onnxruntime-linux-x64-1.12.1 /opt/onnxruntime-linux-x64-1.12.1
+COPY --chown=1000:1000 --from=ghcr.io/zalozbadev/docker_vosk-cmdline:unify_recognizers /opt/build/whisper.cpp                                 /opt/whisper.cpp
+COPY --chown=1000:1000 --from=ghcr.io/zalozbadev/docker_vosk-cmdline:unify_recognizers /opt/build/common/cmdline/whisper_out                  /opt/whisper_out
+COPY --chown=1000:1000 --from=ghcr.io/zalozbadev/docker_vosk-cmdline:unify_recognizers /opt/build/common/cmdline/recikts_out                  /opt/recikts_out
+COPY --chown=1000:1000 --from=ghcr.io/zalozbadev/docker_vosk-cmdline:unify_recognizers /opt/build/common/cmdline/onnxruntime-linux-x64-1.12.1 /opt/onnxruntime-linux-x64-1.12.1
 
 # python apps übernehmen
-COPY --from=python_builder /opt/venv /opt/venv
+COPY --chown=1000:1000 --from=python_builder /opt/venv /opt/venv
 
 # node backend
-COPY package*.json ./
+COPY --chown=1000:1000 package*.json ./
 RUN npm ci --omit=dev
 
-COPY --from=node_builder /app/dist ./dist
+COPY --chown=1000:1000 --from=node_builder /app/dist ./dist
 
-RUN mkdir -p uploads proprietary whisper
+RUN mkdir -p uploads proprietary whisper logs && chown 1000:1000 uploads proprietary whisper logs
 
-RUN mkdir -p src/scripts
-COPY src/scripts/create_transcript.sh  src/scripts/transcript_whisper.sh \ 
+RUN mkdir -p src/scripts && chown -R 1000:1000 src/
+COPY --chown=1000:1000 src/scripts/create_transcript.sh  src/scripts/transcript_whisper.sh \
      src/scripts/create_forcealign.sh src/scripts/forcealign.sh src/scripts/align_wav2vec2.py \
      src/scripts/log2srt.py src/scripts/log2txt.py \
      src/scripts/translate_srt.sh src/scripts/translate_srt_sotra_lsf.py \
 src/scripts
+
+USER 1000
 
 ENV NODE_ENV=production
 ENV SERVER_MODE=TRANSCRIPT
