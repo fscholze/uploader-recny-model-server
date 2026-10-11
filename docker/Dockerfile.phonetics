@@ -20,17 +20,19 @@ RUN cd speech_recognition_corpus_creation && git checkout 68596c9384adfd073aefc8
 RUN apt update
 RUN apt install -y python3-numpy python3-yaml
 
-COPY package*.json ./
+COPY --chown=1000:1000 package*.json ./
 RUN npm ci --omit=dev
 
-COPY --from=phoneticsbuild /app/dist ./dist
+COPY --chown=1000:1000 --from=phoneticsbuild /app/dist ./dist
 # depends on how the relative path is composed
 # RUN mv speech_recognition_corpus_creation dist/
 
-RUN mkdir -p uploads
+RUN mkdir -p uploads && chown 1000:1000 uploads
 
-RUN mkdir -p src/scripts
-COPY src/scripts/create_dictionary.sh src/scripts
+RUN mkdir -p src/scripts && chown -R 1000:1000 src/
+COPY --chown=1000:1000 src/scripts/create_dictionary.sh src/scripts
+
+USER 1000
 
 ENV NODE_ENV=production
 # ENV PORT=3000

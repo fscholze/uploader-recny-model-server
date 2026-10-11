@@ -6,6 +6,7 @@ psutil == 6.0.0
 pyannote.audio == 4.0.7
 ctranslate2 >= 4.1.0, <= 4.6.0
 faster-whisper == 1.1.1
+av==18.1.0
 transformers >= 4.40, <= 4.45.2
 
 iso639-lang == 2.3.0

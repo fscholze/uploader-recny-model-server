@@ -31,7 +31,8 @@ touch $PROGRESS
 
 # list all currently used models here
 
-RECIKTS_MODEL_BOZA_MSA=misa_2024_08_02.cfg
+# RECIKTS_MODEL_BOZA_MSA=misa_2024_08_02.cfg
+RECIKTS_MODEL_BOZA_MSA=merged_47_nnet_v4_trns_118_wordpc_misa.cfg
 WHISPER_MODEL_HSB_BIG=/usr/app/src/whisper/Korla/whisper_large_v3_turbo_hsb-v1/ggml-model.bin
 WHISPER_MODEL_DSB_BIG=/usr/app/src/whisper/Korla/whisper_large_v3_turbo_dsb/ggml-model.bin
 WHISPER_MODEL_GERMAN=large-v2
@@ -66,7 +67,7 @@ case $MODEL in
 			
 			sox $SOURCEFILE.wav -r 48000 -c 1 -b 16 $SOURCEFILE.wav.resample.wav
 			echo "20|Resampling hotowe" >> $PROGRESS
-			LD_LIBRARY_PATH=/usr/app/src/proprietary /opt/recikts_out/recikts_main /usr/app/src/proprietary/$RECIKTS_MODEL_BOZA_MSA $SOURCEFILE.wav.resample.wav ./uploads/${FOLDERNAME} > ./uploads/${FOLDERNAME}/log.txt 2>&1
+			LD_LIBRARY_PATH=/usr/app/src/proprietary:/opt/onnxruntime-linux-x64-1.12.1/lib/ /opt/recikts_out/recikts_main /usr/app/src/proprietary/$RECIKTS_MODEL_BOZA_MSA $SOURCEFILE.wav.resample.wav ./uploads/${FOLDERNAME} > ./uploads/${FOLDERNAME}/log.txt 2>&1
 			echo "80|Spóznawanje hotowe" >> $PROGRESS
 			
 			mv uploads/${FOLDERNAME}/subtitles.srt ${OUTFILENAMENOEXT}.srt
@@ -91,6 +92,11 @@ case $MODEL in
 			LD_LIBRARY_PATH=/usr/app/src/proprietary /usr/app/src/proprietary/testrec /usr/app/src/proprietary/$RECIKTS_MODEL_BOZA_MSA $SOURCEFILE.wav.resample.wav | tee $SOURCEFILE.wav.resample.wav.rec.log
 			echo "80|Spóznawanje hotowe" >> $PROGRESS
 			
+			# need a venv with numpy for the processing scripts
+			pushd /opt/venv/forcealign
+			source bin/activate
+			popd
+
 			python3 $(dirname $0)/log2srt.py $SOURCEFILE.wav.resample.wav.rec.log
 			mv uploads/${FOLDERNAME}/*.srt ${OUTFILENAMENOEXT}.srt
 
@@ -124,6 +130,10 @@ case $MODEL in
 		pushd /opt/venv/ctranslate2
 		source bin/activate
 		
+		# somehow this path needs to be specified manually
+		export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/venv/ctranslate2/lib/python3.12/site-packages/nvidia/cublas/lib/
+		echo $LD_LIBRARY_PATH
+
 		if [ "$DIARIZATION" -gt 0 ]; then
 			# with speaker diarization
 			whisper-ctranslate2 --model $WHISPER_MODEL_GERMAN --output_dir /usr/app/src/uploads/${FOLDERNAME}/ --device cuda --hf_token $HF_TOKEN --language de /usr/app/src/$SOURCEFILE.wav.resample.wav > /usr/app/src/uploads/${FOLDERNAME}/log.log 2>&1

@@ -64,7 +64,8 @@ else
 	sox $SOURCEFILE.wav -r 16000 -c 1 -b 16 $SOURCEFILE.wav.resample.wav
 	echo "20|Resampling hotowe" >> $PROGRESS
 	
-	LD_LIBRARY_PATH=/opt/whisper.cpp/build/bin /opt/whisper.cpp/build/bin/whisper-cli -m $MODEL --output-txt -f $SOURCEFILE.wav.resample.wav
+	LD_LIBRARY_PATH=/opt/whisper.cpp/build/bin:/opt/whisper.cpp/build/ggml/src/:/opt/whisper.cpp/build/src/:/opt/whisper.cpp/build/ggml/src/ggml-cuda/ \
+	    /opt/whisper.cpp/build/bin/whisper-cli -m $MODEL --output-txt -f $SOURCEFILE.wav.resample.wav
 	mv $SOURCEFILE.wav.resample.wav.txt ${OUTFILENAMENOEXT}.txt
 	echo "100|Transkript hotowe|1|0|0|0" >> $PROGRESS
 	
